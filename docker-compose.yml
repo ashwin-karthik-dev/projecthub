@@ -1,0 +1,56 @@
+# One-command local stack: MySQL + NestJS API + React (nginx).
+# Usage:  docker compose up --build
+# Then:   frontend  http://localhost:5173
+#         API/docs  http://localhost:3000/api/docs
+
+services:
+  db:
+    image: mysql:8
+    container_name: pms-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: pms
+    ports:
+      # Host 3307 -> container 3306 to avoid clashing with a local MySQL.
+      - '3307:3306'
+    volumes:
+      - pms_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-uroot', '-ppassword']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: ./backend
+    container_name: pms-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Inside the compose network the DB is reachable as `db:3306`.
+      DATABASE_URL: 'mysql://root:password@db:3306/pms'
+      JWT_SECRET: 'change-me-in-production-please-use-a-long-random-string'
+      JWT_EXPIRES_IN: '1d'
+      PORT: '3000'
+      CORS_ORIGIN: 'http://localhost:5173'
+      GLOBAL_RATE_LIMIT: '120'
+    ports:
+      - '3000:3000'
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: 'http://localhost:3000/api'
+    container_name: pms-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - '5173:80'
+
+volumes:
+  pms_mysql_data:

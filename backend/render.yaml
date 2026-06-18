@@ -1,0 +1,22 @@
+# Render Blueprint for the NestJS API.
+# Create the database separately (Render Postgres is free, or use a managed
+# MySQL such as Aiven/Railway) and set DATABASE_URL in the dashboard.
+services:
+  - type: web
+    name: pms-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npx prisma generate && npm run build
+    startCommand: npx prisma migrate deploy && node dist/main
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 1d
+      - key: CORS_ORIGIN
+        sync: false
+      - key: GLOBAL_RATE_LIMIT
+        value: '120'
