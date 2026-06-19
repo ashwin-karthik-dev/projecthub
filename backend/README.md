@@ -1,10 +1,18 @@
 # ProjectHub — Backend (NestJS API)
 
-REST API for the Project Management System. See the [root README](../README.md)
-for the full project overview, and [`docs/API.md`](../docs/API.md) for endpoint
-details.
+REST API for the Project Management System.
 
-## Setup
+## Documentation
+
+| Guide | Link |
+| ----- | ---- |
+| Full project setup | [docs/SETUP.md](../docs/SETUP.md) |
+| Environment variables | [docs/ENVIRONMENT.md](../docs/ENVIRONMENT.md) |
+| Database / Prisma | [docs/DATABASE.md](../docs/DATABASE.md) |
+| API reference | [docs/API.md](../docs/API.md) |
+| Interactive API docs | http://localhost:3000/api/docs |
+
+## Quick setup
 
 ```bash
 cp .env.example .env        # configure DATABASE_URL, JWT_SECRET
@@ -13,8 +21,6 @@ npx prisma migrate dev      # create tables
 npm run db:seed             # optional demo data
 npm run start:dev           # http://localhost:3000/api
 ```
-
-Swagger docs: http://localhost:3000/api/docs
 
 ## Structure
 

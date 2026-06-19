@@ -1,17 +1,24 @@
 # ProjectHub — Frontend (React + Vite)
 
-Single-page app for the Project Management System. See the
-[root README](../README.md) for the full overview.
+Single-page app for the Project Management System.
 
-## Setup
+## Documentation
+
+| Guide | Link |
+| ----- | ---- |
+| Full project setup | [docs/SETUP.md](../docs/SETUP.md) |
+| Environment variables | [docs/ENVIRONMENT.md](../docs/ENVIRONMENT.md) |
+| API reference | [docs/API.md](../docs/API.md) |
+
+## Quick setup
 
 ```bash
 cp .env.example .env        # VITE_API_URL=http://localhost:3000/api
 npm install
-npm run dev                 # http://localhost:5173
+npm run dev                 # http://localhost:5173 (or next free port)
 ```
 
-The backend must be running for the app to work.
+The backend must be running. See [docs/SETUP.md](../docs/SETUP.md).
 
 ## Structure
 

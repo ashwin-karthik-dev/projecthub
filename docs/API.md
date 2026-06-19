@@ -2,8 +2,38 @@
 
 Base URL: `http://localhost:3000/api` (all routes are prefixed with `/api`).
 
-Interactive Swagger/OpenAPI docs are served live at **`/api/docs`** when the
-backend is running.
+**Interactive docs:** when the backend is running, open
+**http://localhost:3000/api/docs** (Swagger UI) to try endpoints with live
+requests.
+
+---
+
+## Quick reference
+
+| Method | Path | Auth | Description |
+| ------ | ---- | :--: | ----------- |
+| GET | `/health` | No | Health check |
+| POST | `/auth/register` | No | Create account |
+| POST | `/auth/login` | No | Log in (5 req/min limit) |
+| POST | `/auth/logout` | Yes | Log out (client drops token) |
+| GET | `/auth/me` | Yes | Current user profile |
+| GET | `/projects` | Yes | List own projects |
+| GET | `/projects/:id` | Yes | Get one project |
+| POST | `/projects` | Yes | Create project |
+| PUT | `/projects/:id` | Yes | Update project |
+| DELETE | `/projects/:id` | Yes | Delete project + tasks |
+| GET | `/tasks` | Yes | List own tasks |
+| GET | `/tasks/:id` | Yes | Get one task |
+| POST | `/tasks` | Yes | Create task |
+| PUT | `/tasks/:id` | Yes | Update task |
+| PATCH | `/tasks/:id/complete` | Yes | Mark task completed |
+| DELETE | `/tasks/:id` | Yes | Delete task |
+| GET | `/dashboard/stats` | Yes | Dashboard aggregates |
+| GET | `/audit-logs` | Yes | Audit trail (scoped by role) |
+| GET | `/admin/users` | Admin | List all users |
+| GET | `/admin/stats` | Admin | Platform totals |
+
+---
 
 ## Authentication
 
@@ -16,6 +46,20 @@ Authorization: Bearer <accessToken>
 
 Tokens expire after `JWT_EXPIRES_IN` (default `1d`). All endpoints except
 `/auth/register`, `/auth/login`, and `/health` require authentication.
+
+### HTTP status codes
+
+| Code | Meaning |
+| ---- | ------- |
+| `200` | Success |
+| `201` | Created (register) |
+| `400` | Validation error |
+| `401` | Missing/invalid token or wrong login credentials |
+| `403` | Forbidden (e.g. non-admin on `/admin/*`) |
+| `404` | Resource not found (including other users' resources) |
+| `409` | Conflict (e.g. duplicate email) |
+| `429` | Rate limit exceeded (login: 5/min) |
+| `500` | Server error |
 
 ### Standard error shape
 
@@ -34,6 +78,8 @@ Tokens expire after `JWT_EXPIRES_IN` (default `1d`). All endpoints except
 ## Auth
 
 ### `POST /auth/register`
+
+Password rules: minimum 8 characters, maximum 72.
 
 ```json
 // request
@@ -59,7 +105,11 @@ Returns `{ "message": "Logged out successfully" }`.
 
 ### `GET /auth/me`  _(auth required)_
 
-Returns the current user `{ id, fullName, email, createdAt }`.
+Returns the current user:
+
+```json
+{ "id": "...", "fullName": "Ada Lovelace", "email": "ada@example.com", "role": "MEMBER", "createdAt": "..." }
+```
 
 ---
 

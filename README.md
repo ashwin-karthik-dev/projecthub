@@ -23,55 +23,28 @@ statistics dashboard.
 ```
 .
 ├── backend/            NestJS REST API (auth, projects, tasks, dashboard)
-├── frontend/           React single-page app
-├── docs/
-│   ├── API.md          REST API reference
-│   └── ER_DIAGRAM.md   Database schema / ER diagram (Mermaid)
-├── docker-compose.yml  One-command local stack (db + api + web)
+├── frontend/         React single-page app
+├── docs/             Developer documentation (see below)
+├── docker-compose.yml
 └── README.md
 ```
 
-## Features
+## Documentation
 
-**Functional**
-- User registration, login, logout (JWT, stays signed in until logout/expiry)
-- Projects: full CRUD, owner-scoped listing, status workflow
-- Tasks: full CRUD under a project, "mark complete", priority & status
-- Dashboard: totals for projects, tasks, completed, pending, projects in progress
-- Search projects/tasks by name; filter projects by status; filter tasks by
-  status and priority
-- Pagination & sorting on list endpoints
-
-**Engineering / Security**
-- Passwords hashed with bcrypt; never stored or returned in responses
-- JWT authentication middleware + protected routes
-- Strict ownership checks — users can never read or modify other users' data
-- Request validation on every endpoint (`class-validator`)
-- SQL-injection-safe (Prisma parameterized queries)
-- Rate limiting on login; `helmet` security headers; configurable CORS
-- Centralised error handling, request logging, Swagger docs
-- **Role-Based Access Control** (ADMIN/MEMBER) with guarded `/admin` routes
-- **Audit logs** recording every create/update/delete with an actor and metadata
-
-### Bonus features (all implemented)
-
-| Bonus | Status | Notes |
-| ----- | :----: | ----- |
-| Docker Support | ✅ | Per-app Dockerfiles + `docker-compose` (db + api + web) |
-| Unit Tests | ✅ | Jest service tests (`backend/src/**/*.spec.ts`) |
-| Integration Tests | ✅ | Supertest e2e suite (`backend/test/app.e2e-spec.ts`) |
-| Pagination | ✅ | `page`/`limit` on list endpoints + UI controls |
-| Sorting | ✅ | `sortBy`/`sortOrder` on list endpoints |
-| Audit Logs | ✅ | `audit_logs` table + `/api/audit-logs` |
-| Role-Based Access Control | ✅ | `RolesGuard` + `@Roles`, admin-only `/api/admin/*` |
-| CI/CD Pipeline | ✅ | GitHub Actions: lint + unit + e2e + build ([.github/workflows/ci.yml](.github/workflows/ci.yml)) |
-| Application Deployment | ⚙️ | Deploy configs ready (Vercel + Render); see [Deployment](#deployment) |
+| Document | Description |
+| -------- | ----------- |
+| **[docs/SETUP.md](docs/SETUP.md)** | **Project setup** — prerequisites, Docker vs local, troubleshooting |
+| **[docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)** | **Environment variables** — backend, frontend, Docker, production |
+| **[docs/DATABASE.md](docs/DATABASE.md)** | **Database setup** — MySQL, migrations, seed, Prisma commands |
+| **[docs/API.md](docs/API.md)** | **API reference** — endpoints, auth, query params, examples |
+| [docs/ER_DIAGRAM.md](docs/ER_DIAGRAM.md) | Database schema / ER diagram (Mermaid) |
+| http://localhost:3000/api/docs | Interactive Swagger UI (when backend is running) |
 
 ---
 
 ## Quick Start
 
-### Option A — Docker (recommended, one command)
+### Option A — Docker (one command)
 
 Requires Docker Desktop.
 
@@ -79,112 +52,63 @@ Requires Docker Desktop.
 docker compose up --build
 ```
 
-This starts MySQL, runs migrations automatically, and serves:
+| Service | URL |
+| ------- | --- |
+| Frontend | http://localhost:5173 |
+| API + Swagger | http://localhost:3000/api/docs |
 
-- Frontend → http://localhost:5173
-- API + Swagger docs → http://localhost:3000/api/docs
-
-To also load demo data, in another terminal:
+Load demo data:
 
 ```bash
 docker compose exec backend npx prisma db seed
 ```
 
-### Option B — Run locally without Docker
+### Option B — Local (two terminals)
 
-**Prerequisites:** Node 20+, a running MySQL 8 instance.
-
-**1. Backend**
+**Prerequisites:** Node 20+, MySQL 8+
 
 ```bash
+# Terminal 1 — Backend
 cd backend
-cp .env.example .env          # then edit DATABASE_URL / JWT_SECRET
+cp .env.example .env          # edit DATABASE_URL for your MySQL port
 npm install
-npx prisma migrate dev        # creates tables
-npm run db:seed               # optional demo data
-npm run start:dev             # http://localhost:3000/api
-```
+npx prisma migrate dev
+npm run db:seed
+npm run start:dev
 
-**2. Frontend** (in a second terminal)
-
-```bash
+# Terminal 2 — Frontend
 cd frontend
-cp .env.example .env          # VITE_API_URL=http://localhost:3000/api
+cp .env.example .env
 npm install
-npm run dev                   # http://localhost:5173
+npm run dev
 ```
+
+Full step-by-step instructions, port notes, and troubleshooting:
+**[docs/SETUP.md](docs/SETUP.md)**
 
 ### Demo credentials (after seeding)
 
-```
-Member:  demo@example.com   /  Demo@1234
-Admin:   admin@example.com  /  Admin@1234   (can access /api/admin/*)
-```
+| Role | Email | Password |
+| ---- | ----- | -------- |
+| Member | `demo@example.com` | `Demo@1234` |
+| Admin | `admin@example.com` | `Admin@1234` |
 
 ---
 
-## Environment Variables
+## Features
 
-### Backend (`backend/.env`)
+**Functional**
+- User registration, login, logout (JWT)
+- Projects & tasks: full CRUD, search, filter, pagination, sorting
+- Dashboard statistics
+- Audit logs and RBAC (ADMIN / MEMBER)
 
-| Variable | Required | Default | Description |
-| -------- | :------: | ------- | ----------- |
-| `DATABASE_URL` | ✅ | — | MySQL connection string `mysql://user:pass@host:port/db` |
-| `JWT_SECRET` | ✅ | — | Secret used to sign JWTs (use a long random value) |
-| `JWT_EXPIRES_IN` |  | `1d` | Token lifetime |
-| `PORT` |  | `3000` | API port |
-| `CORS_ORIGIN` |  | `http://localhost:5173` | Comma-separated allowed origins |
-| `GLOBAL_RATE_LIMIT` |  | `120` | Requests/min per IP (login is additionally capped at 5/min) |
+**Engineering / Security**
+- bcrypt passwords, JWT auth, ownership checks, input validation
+- Prisma (SQL-injection safe), rate limiting, helmet, CORS
+- Unit tests, e2e tests, GitHub Actions CI
 
-### Frontend (`frontend/.env`)
-
-| Variable | Default | Description |
-| -------- | ------- | ----------- |
-| `VITE_API_URL` | `http://localhost:3000/api` | Base URL of the backend API |
-
-> **Port note:** `docker-compose` and `.env.example` map MySQL to host port
-> **3307** to avoid clashing with a locally-installed MySQL on 3306. Change it
-> if you prefer 3306.
-
----
-
-## Database Setup
-
-The schema is defined in [`backend/prisma/schema.prisma`](backend/prisma/schema.prisma)
-and managed with Prisma migrations.
-
-```bash
-cd backend
-npx prisma migrate dev      # apply migrations in development
-npx prisma migrate deploy   # apply migrations in production
-npx prisma studio           # browse data in a GUI
-npm run db:seed             # insert demo user + sample projects/tasks
-```
-
-See [`docs/ER_DIAGRAM.md`](docs/ER_DIAGRAM.md) for the schema diagram and design notes.
-
----
-
-## API Documentation
-
-- **Interactive:** run the backend and open http://localhost:3000/api/docs (Swagger UI)
-- **Reference:** [`docs/API.md`](docs/API.md)
-
-Minimum endpoints implemented (plus extras like `/auth/me`,
-`/tasks/:id/complete`, `/dashboard/stats`, `/audit-logs`, `/admin/users`,
-`/admin/stats`, `/health`):
-
-```
-POST   /api/auth/register      GET    /api/projects
-POST   /api/auth/login         GET    /api/projects/:id
-POST   /api/auth/logout        POST   /api/projects
-                               PUT    /api/projects/:id
-GET    /api/tasks              DELETE /api/projects/:id
-GET    /api/tasks/:id
-POST   /api/tasks
-PUT    /api/tasks/:id
-DELETE /api/tasks/:id
-```
+See [docs/API.md](docs/API.md) for the full endpoint list.
 
 ---
 
@@ -192,42 +116,25 @@ DELETE /api/tasks/:id
 
 ```bash
 cd backend
-npm test            # unit tests (services, authorization, validation)
-npm run test:e2e    # integration tests (HTTP + DB: auth, ownership, RBAC, audit)
+npm test            # unit tests
+npm run test:e2e    # integration tests
 ```
-
-Both suites also run automatically in CI on every push/PR via
-[GitHub Actions](.github/workflows/ci.yml) (with a MySQL service container).
 
 ---
 
 ## Deployment
 
-The app is deployment-ready for a split frontend/backend setup:
+- **Frontend → Vercel** (`frontend/`, set `VITE_API_URL`)
+- **Backend → Render** (`backend/render.yaml`, set `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`)
+- **Database → managed MySQL** (Aiven, Railway, etc.)
 
-- **Frontend → Vercel.** Import the `frontend/` directory; Vercel auto-detects
-  Vite. Set `VITE_API_URL` to your deployed API URL. SPA routing is handled by
-  [`frontend/vercel.json`](frontend/vercel.json).
-- **Backend → Render.** Use [`backend/render.yaml`](backend/render.yaml) (Blueprint),
-  or a Node web service with build `npm ci && npx prisma generate && npm run build`
-  and start `npx prisma migrate deploy && node dist/main`. Set `DATABASE_URL`,
-  `JWT_SECRET`, and `CORS_ORIGIN` (your Vercel URL).
-- **Database → managed MySQL.** e.g. Aiven or Railway free MySQL. (Neon is
-  Postgres-only, so it is not used here since this project targets MySQL.)
-
-After deploy, point the frontend's `VITE_API_URL` at the backend and the
-backend's `CORS_ORIGIN` at the frontend.
+Details in [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md#production-deployment).
 
 ---
 
 ## Design Decisions
 
-- **NestJS + Prisma** for a modular, strongly-typed backend with DI, guards, and
-  parameterized queries out of the box.
-- **404 over 403** for cross-user access so the API never reveals that another
-  user's resource exists.
-- **Denormalised `owner_id` on tasks** for fast, join-free authorization and
-  dashboard aggregation, while project ownership is still verified on task
-  creation.
-- **TanStack Query** on the frontend for caching, loading/error states, and
-  automatic refetching after mutations.
+- **NestJS + Prisma** for modular, typed backend with guards and parameterized queries.
+- **404 over 403** for cross-user access so resource existence is not disclosed.
+- **Denormalised `owner_id` on tasks** for fast authorization and dashboard aggregation.
+- **TanStack Query** on the frontend for caching and mutation refetching.

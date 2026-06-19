@@ -21,20 +21,21 @@ async function main() {
   const passwordHash = await bcrypt.hash('Demo@1234', 12);
 
   // Admin user (for RBAC demo).
+  const adminPasswordHash = await bcrypt.hash('Admin@1234', 12);
   await prisma.user.upsert({
     where: { email: 'admin@example.com' },
-    update: { role: Role.ADMIN },
+    update: { role: Role.ADMIN, passwordHash: adminPasswordHash },
     create: {
       fullName: 'Admin User',
       email: 'admin@example.com',
-      passwordHash: await bcrypt.hash('Admin@1234', 12),
+      passwordHash: adminPasswordHash,
       role: Role.ADMIN,
     },
   });
 
   const user = await prisma.user.upsert({
     where: { email },
-    update: {},
+    update: { passwordHash, fullName: 'Demo User' },
     create: { fullName: 'Demo User', email, passwordHash, role: Role.MEMBER },
   });
 
